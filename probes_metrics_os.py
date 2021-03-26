@@ -61,7 +61,7 @@ class ProbesMetricOs:
 
     def write_metrics(self):
         now = datetime.now()
-        with open('collector' + str(now) + '.csv', mode='w', newline='') as csv_file:
+        with open('os_collector' + str(now) + '.csv', mode='w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
             csv_writer.writerow(['Datetime','Interval','Total Memory','Available Memory',
             'Process','Memory used from process','Disk space','CPU Usage','Disk Write','Disk Read'])
