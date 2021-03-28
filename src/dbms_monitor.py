@@ -1,13 +1,23 @@
+import os
+from decouple import config
 import mysql.connector
 import time
 import csv
 from datetime import datetime
 
 class DBMSMonitor:
-
-    #TODO: make env variables for db
-    connector = mysql.connector.connect(user='root', port='3306', password='senha')
-    cursor = connector.cursor()
+    
+    DB_HOST=config('DB_HOST')
+    DB_PORT=config('DB_PORT')
+    DB_USER=config('DB_USER')
+    DB_SECRET=config('DB_SECRET')
+    
+    try:
+        connector = mysql.connector.connect(host=DB_HOST, port=DB_PORT, 
+        user=DB_USER, password=DB_SECRET)
+        cursor = connector.cursor()
+    except mysql.connector.Error as err:
+        print("Something went wrong: ", err)
 
     def __init__(self, interval, total_time):
         self.interval = interval
@@ -32,7 +42,6 @@ class DBMSMonitor:
             if len(titles) > 0:
                 row_with_titles.append(titles)
             row_with_titles.append(row)
-            print('adicionou uma linha :)')
             time.sleep(self.interval)
             counter+=1
         return row_with_titles
