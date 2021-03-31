@@ -1,3 +1,4 @@
+import logging
 import psutil
 import time
 import csv
@@ -67,4 +68,5 @@ class ProbesMetricOs:
             'Process','Memory used from process','Disk space','CPU Usage','Disk Write','Disk Read'])
             for row in self.run_metric_collections():
                 csv_writer.writerow(row)
+        logging.info('OS Metric writen.')
             

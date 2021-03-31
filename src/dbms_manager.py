@@ -42,6 +42,7 @@ class DBMSManager:
             csv_writer = csv.writer(csv_file)
             for row in self.read_config():
                 csv_writer.writerow(row)
+        logging.info('Global variables writen.')
     
     def update_config(self):
         with open('db_config_input.csv') as csv_file:

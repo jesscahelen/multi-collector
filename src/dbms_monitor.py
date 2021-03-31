@@ -4,24 +4,14 @@ import mysql.connector
 import time
 import csv
 from datetime import datetime
+from src.dbms_manager import *
 
 class DBMSMonitor:
-    
-    DB_HOST=config('DB_HOST')
-    DB_PORT=config('DB_PORT')
-    DB_USER=config('DB_USER')
-    DB_SECRET=config('DB_SECRET')
-    
-    try:
-        connector = mysql.connector.connect(host=DB_HOST, port=DB_PORT, 
-        user=DB_USER, password=DB_SECRET)
-        cursor = connector.cursor()
-    except mysql.connector.Error as err:
-        print("Something went wrong: ", err)
 
     def __init__(self, interval, total_time):
         self.interval = interval
         self.total_time = total_time
+        self.cursor = DBMSManager.cursor
 
     def get_global_status(self):
         has_titles = False
@@ -52,4 +42,4 @@ class DBMSMonitor:
             csv_writer = csv.writer(csv_file)
             for row in self.get_global_status():
                 csv_writer.writerow(row)
-
+        logging.info('Global status writen.')
