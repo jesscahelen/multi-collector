@@ -48,7 +48,7 @@ class DBMSMonitor:
 
     def write_metrics(self):
         now = datetime.now()
-        with open('dbms_collector' + str(now) + '.csv', mode='w', newline='') as csv_file:
+        with open('dbms_collector_global_status' + str(now) + '.csv', mode='w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
             for row in self.get_global_status():
                 csv_writer.writerow(row)
