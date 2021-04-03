@@ -1,3 +1,5 @@
 Config_Id,Knob_name,Value
-1,max_connections,1000
+1,max_connections,10020
 2,sort_buffer_size,512000
+3,port,3306
+4,autocommit,0

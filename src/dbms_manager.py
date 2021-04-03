@@ -1,4 +1,6 @@
 import os
+import subprocess
+import configparser
 import logging
 from decouple import config
 import mysql.connector
@@ -44,7 +46,9 @@ class DBMSManager:
                 csv_writer.writerow(row)
         logging.info('Global variables writen.')
     
-    def update_config(self):
+    def update_config(self, cnf_file_location):
+        config_dict = configparser.ConfigParser()
+        config_dict['mysqld'] = {}
         with open('db_config_input.csv') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line_count = 0
@@ -53,19 +57,25 @@ class DBMSManager:
                     line_count += 1
                     continue
                 else:
-                    query = 'SET PERSIST %s = %s;' % (row[1], row[2])
-                    logging.info('Query:' + query)
-                    try:
-                        self.cursor.execute(query)
-                    except mysql.connector.DatabaseError as err:
-                        logging.error("Something went wrong: ", err)
+                    config_dict['mysqld'][row[1]] = row[2]
+                    logging.info(f'Config Added: {row[1]}={row[2]}') 
                     line_count += 1
+        with open(cnf_file_location, 'w') as config_file:
+            config_dict.write(config_file)
         logging.info(f'Processed {line_count} lines.')
 
-    def restart_dbms(self):
+    def restart_dbms(self, container):
         try:
-            self.cursor.execute('RESTART')
-        except mysql.connector.Error as err:
+            bash_cmd = ["docker", "stop", container]
+            process = subprocess.Popen(bash_cmd, stdout=subprocess.PIPE)
+            output = process.communicate()
+        except Error as err:
             logging.error("Something went wrong: ", err)
-        print('Restarting DBMS...')
+        try:
+            bash_cmd = ["docker", "start", container]
+            process = subprocess.Popen(bash_cmd, stdout=subprocess.PIPE)
+            output = process.communicate()
+        except Error as err:
+            logging.error("Something went wrong: ", err)
+        logging.info('Restarting DBMS...')
         
