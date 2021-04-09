@@ -5,13 +5,21 @@ import csv
 from datetime import datetime
 
 class ProbesMetricOs:
+    """
+    Probes the OS metrics in an interval of time.
+    """
 
     def __init__(self, interval, total_time, process_name):
         self.interval = interval
         self.total_time = total_time
         self.process_name = process_name
     
+    logging.basicConfig(format='%(asctime)s [%(levelname)s] %(filename)s %(message)s',level=logging.DEBUG)
+    
     def run_metric_collections(self):
+        """
+        Get the metrics of OS and return an array of arrays of each interval of time.
+        """
         counter = 0
         collection = []
         while(counter < self.total_time):
@@ -23,7 +31,7 @@ class ProbesMetricOs:
             row.append(str(self.get_available_memory()))
             row.append(str(self.process_name))
             row.append(str(self.get_memory_used_from_process(self.process_name)))
-            row.append(str(self.get_disk_space()))
+            row.append(str(self.get_available_disk_space()))
             row.append(str(self.get_cpu_usage(self.interval)))
             row.append(str(self.get_disk_write(self.interval)))
             row.append(str(self.get_disk_reads(self.interval)))
@@ -32,35 +40,59 @@ class ProbesMetricOs:
         return collection
 
     def get_total_memory(self):
+        """
+        Get the total amount of existent memory.
+        """
         return psutil.virtual_memory()[0]
 
     def get_available_memory(self):
+        """
+        Get the total amount of available memory.
+        """
         return psutil.virtual_memory()[1]
 
     def get_memory_used_from_process(self, process_name):
+        """
+        Get the percent of memory usage from a specific process.
+        """
         for proc in psutil.process_iter(['name', 'memory_percent']):
             if process_name in proc.info['name']:
                 return proc.info['memory_percent']
 
-    def get_disk_space(self):
+    def get_available_disk_space(self):
+        """
+        Get the total amount of available disk space.
+        """
         return psutil.disk_usage('/')[2]
 
     def get_cpu_usage(self, interval):
+        """
+        Get the total percent of cpu usage.
+        """
         return psutil.cpu_percent(interval)
 
     def get_disk_write(self, interval):
+        """
+        Get the amount of writes on disk in an interval of time.
+        """
         p_before = psutil.disk_io_counters()[1]
         time.sleep(interval)
         p_after = psutil.disk_io_counters()[1]
         return p_after - p_before
 
     def get_disk_reads(self, interval):
+        """
+        Get the amount of reads on disk in an interval of time.
+        """
         p_before = psutil.disk_io_counters()[0]
         time.sleep(interval)
         p_after = psutil.disk_io_counters()[0]
         return p_after - p_before
 
     def write_metrics(self):
+        """
+        Get the values of the metrics from run_metric_collections and write in a .csv file.
+        """
         now = datetime.now()
         with open('os_collector' + str(now) + '.csv', mode='w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
