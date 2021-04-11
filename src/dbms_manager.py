@@ -106,7 +106,7 @@ class DBMSManager:
         try:
             bash_cmd = ["docker", "restart", container]
             process = subprocess.run(bash_cmd, capture_output=True, text=True)
-            output = process.sterr
+            output = process.stderr
         except Error as err:
             logging.error(output + "\n" + "Something went wrong: ", err)
         logging.info('Restarting DBMS...')
@@ -118,9 +118,9 @@ class DBMSManager:
         try:
             bash_cmd = ["docker", "stop", container]
             process = subprocess.run(bash_cmd, capture_output=True, text=True)
-            output = process.sterr
+            output = process.stderr
         except Error as err:
-            logging.error(output + "\n" + "Something went wrong: ", err)
+            logging.error(output + "\n" + "Something went wrong when stopping the container" + container + ": ", err)
         logging.info('Container ' + container + ' stopped.')
     
     def start_dbms(self, container):
@@ -130,7 +130,7 @@ class DBMSManager:
         try:
             bash_cmd = ["docker", "start", container]
             process = subprocess.run(bash_cmd, capture_output=True, text=True)
-            output = process.sterr
+            output = process.stderr
         except Error as err:
             logging.error(output + "\n" + "Something went wrong: ", err)
         logging.info('Container ' + container + ' started.')

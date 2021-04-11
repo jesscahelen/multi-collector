@@ -1,4 +1,5 @@
 import os
+import logging
 from decouple import config
 import mysql.connector
 import time
