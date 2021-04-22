@@ -13,23 +13,22 @@ class DBMSManager:
     Manage actions of DBMS.
     """
 
-    def __init__(self):
-        pass
-
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(filename)s %(message)s',level=logging.DEBUG)
     
-    DB_HOST=config('DB_HOST')
-    DB_PORT=config('DB_PORT')
-    DB_USER=config('DB_USER')
-    DB_SECRET=config('DB_SECRET')
-    
-    try:
-        connector = mysql.connector.connect(host=DB_HOST, port=DB_PORT, 
-        user=DB_USER, password=DB_SECRET)
-        cursor = connector.cursor()
-    except mysql.connector.Error as err:
-        logging.error("Something went wrong: ", err)
-    
+    def __init__(self):
+        self.DB_CONTAINER_NAME = config('DB_CONTAINER_NAME')
+        self.RUN_INTERVAL = int(config('RUN_INTERVAL'))
+        DB_HOST=config('DB_HOST')
+        DB_PORT=config('DB_PORT')
+        DB_USER=config('DB_USER')
+        DB_SECRET=config('DB_SECRET')
+        
+        try:
+            self.connector = mysql.connector.connect(host=DB_HOST, port=DB_PORT, 
+            user=DB_USER, password=DB_SECRET)
+            self.cursor = self.connector.cursor()
+        except mysql.connector.Error as err:
+            logging.error("Something went wrong: ", err)
 
     def read_config(self):
         """
@@ -37,27 +36,33 @@ class DBMSManager:
         Returns an array of titles of colunms and its rows.
         """
         row_with_titles = []
-        self.cursor.execute('SELECT * FROM performance_schema.global_variables;')
-        titles = []
-        row = []
-        for c in self.cursor:
-            titles.append(c[0])
-            row.append(c[1])
-        row_with_titles.append(titles)
-        row_with_titles.append(row)
+        while not self.connector.is_connected():
+            logging.error("DBMS not available. Trying to reconnect...")
+            time.sleep(5)
+        if self.connector.ping():
+            self.cursor.execute('USE performance_schema;')
+            self.cursor.execute('SELECT * FROM performance_schema.global_variables;')
+            titles = []
+            row = []
+            for c in self.cursor:
+                titles.append(c[0])
+                row.append(c[1])
+            row_with_titles.append(titles)
+            row_with_titles.append(row)
         return row_with_titles
     
     def config_db_for_benchmark(self):
         """
         Create a specific user and database for benchmark usage.
         """
-        try:
+        while not self.connector.is_connected():
+            logging.error("DBMS not available. Trying to reconnect...")
+            time.sleep(5)
+        if self.connector.ping():
             self.cursor.execute("CREATE USER IF NOT EXISTS 'oltpbench'@'%' IDENTIFIED BY 'Oltpbench123!';")
-            self.cursor.execute('CREATE DATABASE tpcc;')
+            self.cursor.execute('CREATE DATABASE IF NOT EXISTS tpcc;')
             self.cursor.execute("GRANT ALL PRIVILEGES ON tpcc.* TO 'oltpbench'@'%';")
-        except Error as err:
-            logging.error("Something went wrong: ", err)
-
+            
     def write_config(self):
         """
         Write the current config into a .csv file, getting the config through read_config method.
@@ -69,7 +74,7 @@ class DBMSManager:
                 csv_writer.writerow(row)
         logging.info('Global variables writen.')
     
-    def update_config(self, cnf_file_location, container):
+    def update_config(self):
         """
         Read the db_config_input.csv file and update the configurations
         of the .cnf file of DBMS with these values.
@@ -77,6 +82,7 @@ class DBMSManager:
         If some configuration affects the docker container health, a log 
         file will be created with the error log from the container.
         """
+        cnf_file_location = config('DB_CONF_PATH')
         config_dict = configparser.ConfigParser()
         config_dict['mysqld'] = {}
         with open('db_config_input.csv') as csv_file:
@@ -93,71 +99,57 @@ class DBMSManager:
         with open(cnf_file_location, 'w') as config_file:
             config_dict.write(config_file)
         logging.info(f'Processed {line_count} lines.')
-        self.restart_dbms(container)
-        time.sleep(5)
-        if not self.check_if_container_is_running(container):
-            error_file = self.get_error_from_container(container)
-            logging.error("Something went wrong updating the configurations. The error log will be collected on: " + error_file)
+        self.restart_dbms()
 
-    def restart_dbms(self, container):
+    def restart_dbms(self):
         """
         Restart a container.
         """
         try:
-            bash_cmd = ["docker", "restart", container]
+            bash_cmd = ["docker", "restart", self.DB_CONTAINER_NAME]
             process = subprocess.run(bash_cmd, capture_output=True, text=True)
             output = process.stderr
         except Error as err:
             logging.error(output + "\n" + "Something went wrong: ", err)
         logging.info('Restarting DBMS...')
 
-    def stop_dbms(self, container):
+    def stop_dbms(self):
         """
         Stop a container.
         """
         try:
-            bash_cmd = ["docker", "stop", container]
+            bash_cmd = ["docker", "stop", self.DB_CONTAINER_NAME]
             process = subprocess.run(bash_cmd, capture_output=True, text=True)
             output = process.stderr
         except Error as err:
             logging.error(output + "\n" + "Something went wrong when stopping the container" + container + ": ", err)
-        logging.info('Container ' + container + ' stopped.')
+        logging.info('Container ' + self.DB_CONTAINER_NAME + ' stopped.')
     
-    def start_dbms(self, container):
+    def start_dbms(self):
         """
         Start a container.
         """
         try:
-            bash_cmd = ["docker", "start", container]
+            bash_cmd = ["docker", "start", self.DB_CONTAINER_NAME]
             process = subprocess.run(bash_cmd, capture_output=True, text=True)
             output = process.stderr
         except Error as err:
             logging.error(output + "\n" + "Something went wrong: ", err)
-        logging.info('Container ' + container + ' started.')
+        while not self.connector.is_connected():
+            logging.error("DBMS not available. Trying to reconnect...")
+            self.get_error_from_container()
+            time.sleep(5)
+        if self.connector.ping():
+            logging.info('Container ' + self.DB_CONTAINER_NAME + ' started.')
         
-    def get_error_from_container(self, container):
+    def get_error_from_container(self):
         """
         Get error log from a container. Returns the log file name.
         """
-        bash_cmd = ["docker", "logs", container]
+        bash_cmd = ["docker", "logs", self.DB_CONTAINER_NAME]
         process = subprocess.run(bash_cmd, capture_output=True, text=True)
         output = process.stderr
         return self.write_log(output)
-        
-    def check_if_container_is_running(self, container):
-        """
-        Call the command 'docker ps' to check if the container is up.
-        Returns True if the container is up and False if it's down.
-        """
-        bash_cmd = ["docker", "ps"]
-        print(bash_cmd)
-        process = subprocess.run(bash_cmd, capture_output=True, text=True)
-        output = process.stdout
-        if output in container:
-            logging.info('The container' + container + ' is up.')
-            return True
-        logging.info('The container' + container + ' is down.')
-        return False
     
     def write_log(self, log):
         """

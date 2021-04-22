@@ -3,16 +3,17 @@ import psutil
 import time
 import csv
 from datetime import datetime
+from decouple import config
 
 class ProbesMetricOs:
     """
     Probes the OS metrics in an interval of time.
     """
 
-    def __init__(self, interval, total_time, process_name):
-        self.interval = interval
-        self.total_time = total_time
-        self.process_name = process_name
+    def __init__(self):
+        self.RUN_INTERVAL = int(config('RUN_INTERVAL'))
+        self.RUN_TOTAL_TIME =  int(config('RUN_TOTAL_TIME'))
+        self.OS_PROCESS_NAME = config('OS_PROCESS_NAME')
     
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(filename)s %(message)s',level=logging.DEBUG)
     
@@ -22,19 +23,19 @@ class ProbesMetricOs:
         """
         counter = 0
         collection = []
-        while(counter < self.total_time):
+        while(counter < self.RUN_TOTAL_TIME):
             now = str(datetime.now())
             row = []
             row.append(now)
-            row.append(str(self.interval))
+            row.append(str(self.RUN_INTERVAL))
             row.append(str(self.get_total_memory()))
             row.append(str(self.get_available_memory()))
-            row.append(str(self.process_name))
-            row.append(str(self.get_memory_used_from_process(self.process_name)))
+            row.append(str(self.OS_PROCESS_NAME))
+            row.append(str(self.get_memory_used_from_process(self.OS_PROCESS_NAME)))
             row.append(str(self.get_available_disk_space()))
-            row.append(str(self.get_cpu_usage(self.interval)))
-            row.append(str(self.get_disk_write(self.interval)))
-            row.append(str(self.get_disk_reads(self.interval)))
+            row.append(str(self.get_cpu_usage(self.RUN_INTERVAL)))
+            row.append(str(self.get_disk_write(self.RUN_INTERVAL)))
+            row.append(str(self.get_disk_reads(self.RUN_INTERVAL)))
             counter+=1
             collection.append(row)
         return collection
@@ -50,7 +51,7 @@ class ProbesMetricOs:
         Get the total amount of available memory.
         """
         return psutil.virtual_memory()[1]
-
+        
     def get_memory_used_from_process(self, process_name):
         """
         Get the percent of memory usage from a specific process.

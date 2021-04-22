@@ -8,7 +8,7 @@ import logging
 class BenchManager:
 
     def __init__(self):
-        self.cursor = DBMSManager.cursor
+        self.dbms_manager = DBMSManager()
         self.BENCH_CONFIG_PATH = config('BENCH_CONFIG_PATH')
         self.BENCH_RESULT_PATH = config('BENCH_RESULT_PATH')
         self.DB_CONTAINER_NAME = config('DB_CONTAINER_NAME')
@@ -21,8 +21,9 @@ class BenchManager:
 
     def clean_up_schema(self):
         try:
-            self.cursor.execute("DROP SCHEMA IF EXISTS tpcc;")
-            self.cursor.execute("CREATE SCHEMA tpcc;")
+            if self.dbms_manager.connector.is_connected():
+                self.dbms_manager.cursor.execute("DROP SCHEMA IF EXISTS tpcc;")
+                self.dbms_manager.cursor.execute("CREATE SCHEMA tpcc;")
         except Error as err:
             logging.error("Something went wrong when call clean_up_schema(): ", err)
     
@@ -39,8 +40,8 @@ class BenchManager:
 
     def cold_backup(self):
         rm_backup = ["rm", "-rf", self.DB_BACKUP_PATH]
-        cp_backup = ["cp", "-a", self.DB_DATA_PATH, self.DB_BACKUP_PATH]
-        DBMSManager.stop_dbms(DBMSManager, container=self.DB_CONTAINER_NAME)
+        cp_backup = ["cp", "-a", self.DB_DATA_PATH + "/*", self.DB_BACKUP_PATH]
+        self.dbms_manager.stop_dbms()
         try:
             process = subprocess.run(rm_backup, capture_output=True, text=True)
             output = process.stderr
@@ -55,8 +56,8 @@ class BenchManager:
     
     def restore_cold_backup(self):
         rm_backup = ["rm", "-rf", self.DB_DATA_PATH]
-        cp_backup = ["cp", "-a", self.DB_BACKUP_PATH, self.DB_DATA_PATH]
-        DBMSManager.stop_dbms(DBMSManager, container=self.DB_CONTAINER_NAME)
+        cp_backup = ["cp", "-a", self.DB_BACKUP_PATH + "/*", self.DB_DATA_PATH]
+        self.dbms_manager.stop_dbms()
         try:
             process = subprocess.run(rm_backup, capture_output=True, text=True)
             output = process.stderr
