@@ -14,8 +14,8 @@ class DBMSMonitor:
     """
 
     def __init__(self):
-        self.RUN_INTERVAL = config('RUN_INTERVAL')
-        self.RUN_TOTAL_TIME =  config('RUN_TOTAL_TIME')
+        self.RUN_INTERVAL = int(config('RUN_INTERVAL'))
+        self.RUN_TOTAL_TIME =  int(config('RUN_TOTAL_TIME'))
         self.dbms_manager = DBMSManager()
     
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(filename)s %(message)s',level=logging.DEBUG)
