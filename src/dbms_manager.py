@@ -18,14 +18,14 @@ class DBMSManager:
     def __init__(self):
         self.DB_CONTAINER_NAME = config('DB_CONTAINER_NAME')
         self.RUN_INTERVAL = int(config('RUN_INTERVAL'))
-        DB_HOST=config('DB_HOST')
-        DB_PORT=config('DB_PORT')
-        DB_USER=config('DB_USER')
-        DB_SECRET=config('DB_SECRET')
+        self.DB_HOST=config('DB_HOST')
+        self.DB_PORT=config('DB_PORT')
+        self.DB_USER=config('DB_USER')
+        self.DB_SECRET=config('DB_SECRET')
         
         try:
-            self.connector = mysql.connector.connect(host=DB_HOST, port=DB_PORT, 
-            user=DB_USER, password=DB_SECRET)
+            self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT, 
+            user=self.DB_USER, password=self.DB_SECRET)
             self.cursor = self.connector.cursor()
         except mysql.connector.Error as err:
             logging.error("Something went wrong: ", err)
@@ -38,8 +38,8 @@ class DBMSManager:
         row_with_titles = []
         while not self.connector.is_connected():
             logging.error("DBMS not available. Trying to reconnect...")
-            time.sleep(5)
-        if self.connector.ping():
+            self.connector.ping(reconnect=True, attempts=2, delay=5)
+        if self.connector.is_connected():
             self.cursor.execute('USE performance_schema;')
             self.cursor.execute('SELECT * FROM performance_schema.global_variables;')
             titles = []
@@ -111,6 +111,12 @@ class DBMSManager:
             output = process.stderr
         except Error as err:
             logging.error(output + "\n" + "Something went wrong: ", err)
+        try:
+            self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT, 
+            user=self.DB_USER, password=self.DB_SECRET)
+            self.cursor = self.connector.cursor()
+        except mysql.connector.Error as err:
+            logging.error("Something went wrong: ", err)
         logging.info('Restarting DBMS...')
 
     def stop_dbms(self):
@@ -139,6 +145,12 @@ class DBMSManager:
             logging.error("DBMS not available. Trying to reconnect...")
             self.get_error_from_container()
             time.sleep(5)
+        try:
+            self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT, 
+            user=self.DB_USER, password=self.DB_SECRET)
+            self.cursor = self.connector.cursor()
+        except mysql.connector.Error as err:
+            logging.error("Something went wrong: ", err)
         if self.connector.ping():
             logging.info('Container ' + self.DB_CONTAINER_NAME + ' started.')
         
