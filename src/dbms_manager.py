@@ -22,6 +22,7 @@ class DBMSManager:
         self.DB_PORT=config('DB_PORT')
         self.DB_USER=config('DB_USER')
         self.DB_SECRET=config('DB_SECRET')
+        self.connector=None
         
         try:
             self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT, 
@@ -112,9 +113,7 @@ class DBMSManager:
         except Error as err:
             logging.error(output + "\n" + "Something went wrong: ", err)
         try:
-            self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT, 
-            user=self.DB_USER, password=self.DB_SECRET)
-            self.cursor = self.connector.cursor()
+            self.connector.ping(reconnect=True, attempts=2, delay=5)
         except mysql.connector.Error as err:
             logging.error("Something went wrong: ", err)
         logging.info('Restarting DBMS...')
@@ -130,29 +129,6 @@ class DBMSManager:
         except Error as err:
             logging.error(output + "\n" + "Something went wrong when stopping the container" + container + ": ", err)
         logging.info('Container ' + self.DB_CONTAINER_NAME + ' stopped.')
-    
-    def start_dbms(self):
-        """
-        Start a container.
-        """
-        try:
-            bash_cmd = ["docker", "start", self.DB_CONTAINER_NAME]
-            process = subprocess.run(bash_cmd, capture_output=True, text=True)
-            output = process.stderr
-        except Error as err:
-            logging.error(output + "\n" + "Something went wrong: ", err)
-        while not self.connector.is_connected():
-            logging.error("DBMS not available. Trying to reconnect...")
-            self.get_error_from_container()
-            time.sleep(5)
-        try:
-            self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT, 
-            user=self.DB_USER, password=self.DB_SECRET)
-            self.cursor = self.connector.cursor()
-        except mysql.connector.Error as err:
-            logging.error("Something went wrong: ", err)
-        if self.connector.ping():
-            logging.info('Container ' + self.DB_CONTAINER_NAME + ' started.')
         
     def get_error_from_container(self):
         """
