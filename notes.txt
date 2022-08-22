@@ -1,0 +1,11 @@
+https://github.com/cmu-db/benchbase usa postgres, ver se compensa.
+deve ser em thread e não async porque o benchmark reinicia várias vezes,
+assim como a coleta das métricas, agora que eu movi os outros para a fase de preparo está ok
+
+
+verificar: o caso de fazer o backup e fazer o drop é para n influenciar as métricas do mysql? talvez, hein
+mas mesmo assim, pode ser feito menos coisa, eu acho.
+
+todo: rodar o projeto
+todo: fazer um jeito menos zoado de iniciar os containers que n seja por cmd (se der, n é prioridade)
+todo: alguma maneira de pegar várias configs para rodar em ordem
