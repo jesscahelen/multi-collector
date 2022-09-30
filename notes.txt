@@ -9,3 +9,9 @@ mas mesmo assim, pode ser feito menos coisa, eu acho.
 todo: rodar o projeto
 todo: fazer um jeito menos zoado de iniciar os containers que n seja por cmd (se der, n é prioridade)
 todo: alguma maneira de pegar várias configs para rodar em ordem
+
+
+o container do mysql tava dando merda, daí eu vi que colocar o user mysql resolvia, but, em docker
+que não é no linux acontece esse problema no volume que vc n tem como colocar um fixo da origem 
+que não seja montando um volume... a solução mais fácil seria criar uma vm e usar linux, but
+mac m1 é uma merda. fim. :D
