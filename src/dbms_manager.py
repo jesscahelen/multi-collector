@@ -28,7 +28,7 @@ class DBMSManager:
 
         try:
             self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT,
-                                                     user=self.DB_USER)
+                                                     user=self.DB_USER, password=self.DB_SECRET)
             self.cursor = self.connector.cursor()
         except mysql.connector.Error as err:
             logging.error("Something went wrong: ", err)
