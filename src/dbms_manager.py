@@ -30,6 +30,7 @@ class DBMSManager:
             self.connector = mysql.connector.connect(host=self.DB_HOST, port=self.DB_PORT,
                                                      user=self.DB_USER, password=self.DB_SECRET)
             self.cursor = self.connector.cursor()
+            self.cursor.execute('set max_allowed_packet=67108864')
         except mysql.connector.Error as err:
             logging.error("Something went wrong: ", err)
 
@@ -59,15 +60,17 @@ class DBMSManager:
         """
         Create a specific user and database for benchmark usage.
         """
-        while not self.connector.is_connected():
+        while not self.connector.is_connected() or not self.connector.ping():
             logging.error("DBMS not available. Trying to reconnect...")
-            time.sleep(5)
+            self.connector.ping(reconnect=True, attempts=2, delay=5)
         if self.connector.ping():
             self.cursor.execute(
                 "CREATE USER IF NOT EXISTS 'oltpbench'@'%' IDENTIFIED BY 'Oltpbench123!';")
             self.cursor.execute('CREATE DATABASE IF NOT EXISTS tpcc;')
             self.cursor.execute(
                 "GRANT ALL PRIVILEGES ON tpcc.* TO 'oltpbench'@'%';")
+        else:
+            print("deu ruim no banco :(")
 
     def write_config(self):
         """

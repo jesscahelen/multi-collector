@@ -35,7 +35,7 @@ class ExperimentalManager():
         self.dbms_manager.config_db_for_benchmark()
         self.bench_manager.clean_up_schema()
         self.bench_manager.populate_schema()
-        # self.bench_manager.cold_backup()
+        #self.bench_manager.cold_backup()
 
     def time_prepate(self):  # why does have a backup? i dont understand...
         # it is to not prepare the schema always?
@@ -43,13 +43,7 @@ class ExperimentalManager():
         # so, i will remove it for now.
         # self.bench_manager.restore_cold_backup()  # this should be preparation phase
         self.dbms_manager.restart_dbms()  # this should be preparation too
-
-    def run(self):
-        t1 = threading.Thread(target=self.bench_work)
-        t2 = threading.Thread(target=self.get_metrics_work)
-        t1.start()
-        t2.start()
-
+    
     def bench_work(self):
         self.bench_manager.run_benchmark()
 
@@ -58,3 +52,10 @@ class ExperimentalManager():
     def get_metrics_work(self):
         self.probes_metrics_os.write_metrics()
         self.dbms_monitor.write_metrics()
+
+
+    def run(self):
+        t1 = threading.Thread(target=self.bench_work)
+        t2 = threading.Thread(target=self.get_metrics_work)
+        t1.start()
+        t2.start()

@@ -29,11 +29,14 @@ class BenchManager:
             logging.error(
                 "Something went wrong when call clean_up_schema(): ", err)
 
+#check_call
     def populate_schema(self):
-        bash_cmd = ["cat", self.BENCH_CONFIG_PATH, "|", "docker", "run", "-i", "--rm", "--name=oltpbench",
+        bash_cmd = ["cat", self.BENCH_CONFIG_PATH, "|", "sudo", "docker", "run", "-i", "--rm", "--name=oltpbench", "--network=multi-collector_oltpbench",
                     "oltpbench", "-b", "tpcc", "--create=true", "--load=true"]
+        #cat ./benchmark/config/mysql_tpcc_config.xml | docker run -i --rm --name=oltpbench --network=multi-collector_oltpbench oltpbench -b tpcc --create=true --load=true
         try:
-            process = subprocess.run(bash_cmd, capture_output=True, text=True)
+            process = subprocess.run(bash_cmd, shell=True, capture_output=True)
+            print(process)
             output = process.stderr
         except Error as err:
             logging.error(
@@ -82,16 +85,15 @@ class BenchManager:
         count = 0
         volume = str(self.BENCH_RESULT_PATH) + ":/usr/src/oltpbench/results"
         bash_cmd = ["cat", self.BENCH_CONFIG_PATH, "|", "docker", "run", "-i",
-                    "--rm", "--name=oltpbench", "-v", volume,
-                    "oltpbench", "-b", "tpcc", "--execute=true", "-s", self.RUN_INTERVAL, "-o", "result"]
-        while (count < int(self.RUN_TOTAL_TIME)):
-            try:
-                process = subprocess.run(
-                    bash_cmd, capture_output=True, text=True)
-                output = process.stderr
-            except Error as err:
-                logging.error(
-                    output + "\n" + "Something went wrong when running run_benchmark(): ", err)
-            count += 1
+                    "--rm", "--name=oltpbench", "--network=oltpbench", "-v", volume,
+                    "oltpbench", "-b", "tpcc", "--execute=true", "-o", "result"]
+        try:
+            process = subprocess.run(
+                bash_cmd, capture_output=True, text=True)
+            output = process.stderr
+        except Error as err:
+            logging.error(
+                output + "\n" + "Something went wrong when running run_benchmark(): ", err)
         logging.info('Benchmark ran each ' + self.RUN_INTERVAL +
                      ' seconds, ' + self.RUN_TOTAL_TIME + ' times.')
+#cat ./benchmark/config/mysql_tpcc_config.xml | sudo docker run -i --rm --name=oltpbench -v /home/jessica/tg/multi-collector/benchmark/result:/usr/src/oltpbench/results oltpbench -b tpcc --execute=true -s 2 -o result

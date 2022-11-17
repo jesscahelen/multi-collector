@@ -2,6 +2,7 @@ version: "3.9"
 services:
   db:
     image: mysql:8.0.20
+    container_name: mysql8
     volumes:
       - ./db/config/my-bench.cnf:/etc/my.cnf
       #- ./db/data:/var/lib/mysql/:rw
@@ -15,3 +16,8 @@ services:
         max_replicas_per_node: 1
       restart_policy:
         condition: on-failure
+    networks:
+      - oltpbench
+  
+networks:
+  oltpbench:
