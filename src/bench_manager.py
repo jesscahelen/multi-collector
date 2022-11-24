@@ -1,8 +1,10 @@
 from configparser import Error
+from io import StringIO
 from dbms_manager import *
 import subprocess
 from decouple import config
 import logging
+from subprocess import CalledProcessError, Popen, PIPE, STDOUT
 
 
 class BenchManager:
@@ -35,13 +37,31 @@ class BenchManager:
                     "oltpbench", "-b", "tpcc", "--create=true", "--load=true"]
         #cat ./benchmark/config/mysql_tpcc_config.xml | docker run -i --rm --name=oltpbench --network=multi-collector_oltpbench oltpbench -b tpcc --create=true --load=true
         try:
-            process = subprocess.run(bash_cmd, shell=True, capture_output=True)
-            print(process)
-            output = process.stderr
-        except Error as err:
-            logging.error(
-                output + "\n" + "Something went wrong when call populate_schema(): ", err)
+            process = Popen(bash_cmd, stdout=PIPE, stderr=STDOUT, shell=True)
+            process_output, _ =  process.communicate()
+
+            # process_output is now a string, not a file,
+            # you may want to do:
+            process_output = StringIO(process_output)
+            self.log_subprocess_output(process_output)
+        except (OSError, CalledProcessError) as exception:
+            logging.info('Exception occured: ' + str(exception))
+            logging.info('Subprocess failed')
+            return False
+        else:
+            # no exception was raised
+            logging.info('Subprocess finished')
+        # try:
+        #     process = subprocess.check_call(bash_cmd, shell=True)
+        #     print(process)
+        # except Error as err:
+        #     logging.error(
+        #         "Something went wrong when call populate_schema(): ", err)
         logging.info('Schema tpcc populated.')
+
+    def log_subprocess_output(self, pipe):
+        for line in iter(pipe.readline, b''): # b'\n'-separated lines
+            logging.info('got line from subprocess: %r', line)
 
     def cold_backup(self):
         rm_backup = ["rm", "-rf", self.DB_BACKUP_PATH]

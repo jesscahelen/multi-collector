@@ -6,12 +6,13 @@ assim como a coleta das métricas, agora que eu movi os outros para a fase de pr
 verificar: o caso de fazer o backup e fazer o drop é para n influenciar as métricas do mysql? talvez, hein
 mas mesmo assim, pode ser feito menos coisa, eu acho.
 
-todo: rodar o projeto
-todo: fazer um jeito menos zoado de iniciar os containers que n seja por cmd (se der, n é prioridade)
-todo: alguma maneira de pegar várias configs para rodar em ordem
+[x] rodar o projeto
+[x] fazer um jeito menos zoado de iniciar os containers que n seja por cmd (se der, n é prioridade)
+[ ] sincronizar as coisas, tipo se um terminou, cabô todos e tal
 
 
-o container do mysql tava dando merda, daí eu vi que colocar o user mysql resolvia, but, em docker
-que não é no linux acontece esse problema no volume que vc n tem como colocar um fixo da origem 
-que não seja montando um volume... a solução mais fácil seria criar uma vm e usar linux, but
-mac m1 é uma merda. fim. :D
+
+- preciso checar as pastas para rodar o benchmark
+- investigar o rolê do backup, parece que tem que ser feito uma vez, e depois a cada vez que for rodar o benchmark o restore e tal.
+do jeito que está, não tem como rodar mais de uma vez, pra rodar mais de uma vez precisaria:
+- ter uma automatização de ver a quantidade de arquivos de configs de db, e benchmark
